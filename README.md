@@ -11,7 +11,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)
 
-**A full-stack AI-powered study platform — upload your documents and learn faster with RAG-based chat, AI quizzes, flashcards, summaries, and analytics.**
+**I built this to help students actually understand what they're studying — not just read it. Upload your notes, textbooks or slides and let the AI do the heavy lifting.**
 
 [Features](#-features) · [Tech Stack](#-tech-stack) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API Docs](#-api-documentation) · [Deployment](#-deployment)
 
@@ -21,9 +21,13 @@
 
 ## 🎯 Overview
 
-AI Study Buddy is a production-ready, full-stack SaaS application that transforms how students learn. Upload your study materials (PDF, DOCX, PPTX, TXT, Markdown) and interact with an intelligent AI tutor powered by **Retrieval-Augmented Generation (RAG)**. Every answer is grounded in your own documents with cited sources — no hallucinations.
+So basically I got tired of re-reading the same 50-page PDF three times before an exam and still feeling lost. So I built this.
 
-The frontend is built with **React 18 + TypeScript + Vite**, fully type-safe and lint-clean, with a polished dark/light UI using Tailwind CSS and Radix UI primitives. The backend is a **FastAPI** async API backed by PostgreSQL, ChromaDB, and Redis, supporting multiple LLM providers out of the box.
+AI Study Buddy lets you upload your study material — PDFs, DOCX, PPTX, TXT, whatever you have — and then actually talk to it. Ask questions, get answers that come straight from your own documents (with citations so you know it's not making stuff up). It uses **RAG (Retrieval-Augmented Generation)** under the hood, which just means the AI only answers from what you gave it — no random hallucinated facts.
+
+On top of the chat, it can auto-generate quizzes, flashcards, and summaries from your docs. There's also a study analytics dashboard so you can track how much time you're actually putting in vs. how much you think you are.
+
+The frontend is **React 18 + TypeScript + Vite** with a clean dark/light UI. The backend runs on **FastAPI** with PostgreSQL, ChromaDB for vector search, and Redis. Supports OpenAI, IBM Granite, Llama 3 and Mistral — swap providers with one env variable.
 
 ---
 
