@@ -11,7 +11,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)
 
-**I built this to help students actually understand what they're studying — not just read it. Upload your notes, textbooks or slides and let Learnify do the heavy lifting.**
+**I built this because re-reading the same notes 5 times before an exam and still blanking out is just painful. Learnify turns your study material into something you can actually interact with.**
 
 [Features](#-features) · [Tech Stack](#-tech-stack) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API Docs](#-api-documentation) · [Deployment](#-deployment)
 
@@ -21,13 +21,13 @@
 
 ## 🎯 Overview
 
-So basically I got tired of re-reading the same 50-page PDF three times before an exam and still feeling lost. So I built this.
+Okay so the problem I kept running into — I'd have a 60-page PDF, a slide deck, and some notes, and I genuinely had no idea how to study all of it efficiently before an exam. So I built Learnify to fix that for myself (and hopefully for others too).
 
-Learnify lets you upload your study material — PDFs, DOCX, PPTX, TXT, whatever you have — and then actually talk to it. Ask questions, get answers that come straight from your own documents (with citations so you know it's not making stuff up). It uses **RAG (Retrieval-Augmented Generation)** under the hood, which just means the AI only answers from what you gave it — no random hallucinated facts.
+You drop in your files — PDFs, DOCX, PPTX, TXT, Markdown, whatever — and then you can just chat with them. Ask "explain this concept", "summarize chapter 3", "give me practice questions on this topic" — and it pulls the answer straight from your own documents with source citations. No hallucinations, no random Wikipedia stuff, just your material.
 
-On top of the chat, it can auto-generate quizzes, flashcards, and summaries from your docs. There's also a study analytics dashboard so you can track how much time you're actually putting in vs. how much you think you are.
+Beyond chat, Learnify auto-generates quizzes (MCQ, True/False, Fill in the blanks), flashcard sets with spaced repetition, and multiple summary styles (bullet points, detailed, exam notes). There's a full analytics dashboard too so you can see your study hours, quiz scores over time, and daily streak.
 
-The frontend is **React 18 + TypeScript + Vite** with a clean dark/light UI. The backend runs on **FastAPI** with PostgreSQL, ChromaDB for vector search, and Redis. Supports OpenAI, IBM Granite, Llama 3 and Mistral — swap providers with one env variable.
+Tech-wise: **React 18 + TypeScript + Vite** on the frontend, **FastAPI + PostgreSQL + ChromaDB + Redis** on the backend, and the AI layer supports OpenAI, IBM Granite, Llama 3 and Mistral — one env variable to switch between them.
 
 ---
 
