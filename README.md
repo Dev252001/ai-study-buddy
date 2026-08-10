@@ -6,12 +6,14 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)
 
-**An AI-powered platform that helps students learn faster using RAG, LLMs, and Vector Databases.**
+**A full-stack AI-powered study platform — upload your documents and learn faster with RAG-based chat, AI quizzes, flashcards, summaries, and analytics.**
 
-[Features](#features) · [Tech Stack](#tech-stack) · [Quick Start](#quick-start) · [Architecture](#architecture) · [API Docs](#api-documentation) · [Deployment](#deployment)
+[Features](#-features) · [Tech Stack](#-tech-stack) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API Docs](#-api-documentation) · [Deployment](#-deployment)
 
 </div>
 
@@ -19,7 +21,9 @@
 
 ## 🎯 Overview
 
-AI Study Buddy is a production-ready, full-stack SaaS application that helps students understand complex concepts faster. Students upload their study materials (PDFs, DOCX, PPTX, TXT) and interact with an intelligent AI tutor that uses **Retrieval-Augmented Generation (RAG)** to provide accurate, cited answers from their own documents.
+AI Study Buddy is a production-ready, full-stack SaaS application that transforms how students learn. Upload your study materials (PDF, DOCX, PPTX, TXT, Markdown) and interact with an intelligent AI tutor powered by **Retrieval-Augmented Generation (RAG)**. Every answer is grounded in your own documents with cited sources — no hallucinations.
+
+The frontend is built with **React 18 + TypeScript + Vite**, fully type-safe and lint-clean, with a polished dark/light UI using Tailwind CSS and Radix UI primitives. The backend is a **FastAPI** async API backed by PostgreSQL, ChromaDB, and Redis, supporting multiple LLM providers out of the box.
 
 ---
 

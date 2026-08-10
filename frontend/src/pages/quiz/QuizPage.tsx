@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle, XCircle, ArrowLeft, ArrowRight, Trophy, Flag, Clock, Download, AlertCircle } from 'lucide-react'
+import { CheckCircle, XCircle, ArrowLeft, ArrowRight, Trophy, Flag, Clock, Download, AlertCircle, Sparkles } from 'lucide-react'
 import { useQuiz, useSubmitAttempt } from '@/hooks/useQuiz'
 import { exportApi, getErrorMessage } from '@/lib/api'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -36,7 +35,6 @@ export function QuizPage() {
   const [flagged, setFlagged] = useState<Set<string>>(new Set())
   const [downloading, setDownloading] = useState(false)
 
-  // Keyboard shortcuts — A/B/C/D for MCQ options, ← → to navigate questions
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
@@ -45,9 +43,8 @@ export function QuizPage() {
       if (!qs) return
       const q = qs[current]
       const key = e.key.toUpperCase()
-
       if (q?.question_type === 'mcq' && q.options) {
-        const idx = key.charCodeAt(0) - 65 // A=0, B=1, …
+        const idx = key.charCodeAt(0) - 65
         if (idx >= 0 && idx < q.options.length) {
           e.preventDefault()
           setAnswers((prev) => ({ ...prev, [q.id]: q.options![idx] }))
@@ -55,14 +52,8 @@ export function QuizPage() {
           return
         }
       }
-
-      if (e.key === 'ArrowLeft' && current > 0) {
-        e.preventDefault()
-        setCurrent((c) => c - 1)
-      } else if (e.key === 'ArrowRight' && current < qs.length - 1) {
-        e.preventDefault()
-        setCurrent((c) => c + 1)
-      }
+      if (e.key === 'ArrowLeft' && current > 0) { e.preventDefault(); setCurrent((c) => c - 1) }
+      else if (e.key === 'ArrowRight' && current < qs.length - 1) { e.preventDefault(); setCurrent((c) => c + 1) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -73,9 +64,7 @@ export function QuizPage() {
       setTimerRunning(true)
       timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000)
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [quiz, result]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -88,10 +77,7 @@ export function QuizPage() {
   }, [current]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     setTimerRunning(false)
   }
 
@@ -113,7 +99,7 @@ export function QuizPage() {
       <div className="max-w-2xl mx-auto space-y-4">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-2.5 w-full rounded-full" />
-        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
         <Skeleton className="h-12 w-full" />
       </div>
     )
@@ -122,10 +108,12 @@ export function QuizPage() {
   if (!quiz || !quiz.questions?.length) {
     return (
       <div className="text-center py-16">
-        <AlertCircle className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-        <p className="font-medium">Quiz not found</p>
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto mb-4">
+          <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
+        </div>
+        <p className="font-semibold text-foreground">Quiz not found</p>
         <p className="text-sm text-muted-foreground mt-1">This quiz may have no questions or doesn't exist.</p>
-        <Button className="mt-4" onClick={() => navigate('/quiz')}>Back to Quizzes</Button>
+        <Button className="mt-5" onClick={() => navigate('/quiz')}>Back to Quizzes</Button>
       </div>
     )
   }
@@ -168,82 +156,143 @@ export function QuizPage() {
     const pct = result.percentage
     const passed = pct >= 70
 
+    // Score ring arc fill angle
+    const arcPct = Math.min(pct / 100, 1)
+    const circumference = 2 * Math.PI * 44
+    const dashOffset = circumference * (1 - arcPct)
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
-        className="max-w-2xl mx-auto"
+        className="max-w-2xl mx-auto space-y-4"
       >
-        <Card>
+        {/* Score hero card */}
+        <Card className="overflow-hidden">
+          {/* Top gradient band */}
+          <div className={cn(
+            'h-1.5 w-full',
+            passed ? 'bg-gradient-to-r from-teal-400 via-violet-500 to-pink-500' : 'bg-gradient-to-r from-slate-400 to-slate-500'
+          )} />
           <CardContent className="p-8">
-            {/* Score hero */}
-            <div className="text-center pb-6 border-b border-border mb-6">
-              <div className={cn(
-                'flex h-20 w-20 items-center justify-center rounded-full mx-auto mb-4',
-                passed ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-muted'
-              )}>
-                <Trophy className={cn('h-10 w-10', passed ? 'text-amber-500' : 'text-muted-foreground')} />
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+              {/* SVG ring + trophy */}
+              <div className="relative shrink-0 flex items-center justify-center" style={{ width: 120, height: 120 }}>
+                <svg width="120" height="120" className="-rotate-90">
+                  <circle cx="60" cy="60" r="44" fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
+                  <circle
+                    cx="60" cy="60" r="44" fill="none"
+                    stroke="url(#scoreGrad)" strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={dashOffset}
+                    style={{ transition: 'stroke-dashoffset 1s ease' }}
+                  />
+                  <defs>
+                    <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={passed ? '#14b8a6' : '#94a3b8'} />
+                      <stop offset="100%" stopColor={passed ? '#8b5cf6' : '#64748b'} />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Trophy className={cn('h-7 w-7 mb-0.5', passed ? 'text-amber-400' : 'text-muted-foreground/50')} />
+                  <span className={cn(
+                    'text-xl font-extrabold tabular-nums leading-none',
+                    passed ? 'text-foreground' : 'text-muted-foreground'
+                  )}>{pct.toFixed(0)}%</span>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold">{passed ? 'Well done!' : 'Keep practicing!'}</h2>
-              <p className="text-5xl font-bold mt-2 tabular-nums" style={{ color: passed ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}>
-                {pct.toFixed(0)}%
-              </p>
-              <p className="text-muted-foreground mt-1">{result.correct} of {result.max_score} correct</p>
-              {result.time_taken_seconds != null && (
-                <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {formatTime(result.time_taken_seconds)}
-                </p>
-              )}
-            </div>
 
-            {/* Feedback */}
-            <div className="space-y-2.5 mb-6">
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Question Review</p>
+              {/* Text summary */}
+              <div className="flex-1 text-center sm:text-left">
+                <h2 className="text-2xl font-extrabold">{passed ? '🎉 Well done!' : 'Keep practicing!'}</h2>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  You got <span className="font-bold text-foreground">{result.correct}</span> out of <span className="font-bold text-foreground">{result.max_score}</span> questions correct.
+                </p>
+                {result.time_taken_seconds != null && (
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1 sm:justify-start justify-center">
+                    <Clock className="h-3.5 w-3.5" /> Completed in {formatTime(result.time_taken_seconds)}
+                  </p>
+                )}
+
+                {/* Mini stat pills */}
+                <div className="flex flex-wrap gap-2 mt-4 sm:justify-start justify-center">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-semibold">
+                    <CheckCircle className="h-3.5 w-3.5" /> {result.correct} correct
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 text-xs font-semibold">
+                    <XCircle className="h-3.5 w-3.5" /> {result.max_score - result.correct} wrong
+                  </span>
+                  <span className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
+                    passed ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400' : 'bg-muted text-muted-foreground'
+                  )}>
+                    {passed ? '✓ Passed' : '✗ Not passed'} (70% to pass)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Question Review card */}
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+              Question Review
+            </p>
+            <div className="space-y-2">
               {result.feedback.map((f, i) => (
                 <div
                   key={i}
                   className={cn(
-                    'rounded-lg p-3.5 border',
+                    'rounded-xl border bg-card px-4 py-3 flex items-start gap-3',
+                    'border-l-4',
                     f.is_correct
-                      ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40'
-                      : 'border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-950/40'
+                      ? 'border-l-emerald-500 border-border'
+                      : 'border-l-red-500 border-border'
                   )}
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className={cn(
+                    'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+                    f.is_correct ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-red-100 dark:bg-red-900/40'
+                  )}>
                     {f.is_correct
-                      ? <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                      : <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />}
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium leading-snug">{f.question_text}</p>
-                      {!f.is_correct && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Correct answer: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{f.correct_answer}</span>
-                        </p>
-                      )}
-                      {f.explanation && (
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{f.explanation}</p>
-                      )}
-                    </div>
+                      ? <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      : <XCircle className="h-3.5 w-3.5 text-red-500" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-snug">{f.question_text}</p>
+                    {!f.is_correct && (
+                      <p className="text-xs mt-1">
+                        <span className="text-muted-foreground">Correct: </span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">{f.correct_answer}</span>
+                      </p>
+                    )}
+                    {f.explanation && (
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{f.explanation}</p>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownloadPdf} loading={downloading}>
-                <Download className="mr-2 h-4 w-4" /> Download PDF
-              </Button>
-              <Button variant="outline" className="flex-1 min-w-[100px]" onClick={() => navigate('/quiz')}>
-                Back to Quizzes
-              </Button>
-              <Button className="flex-1 min-w-[100px]" onClick={() => navigate('/quiz/generate')}>
-                Try Another Quiz
-              </Button>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} loading={downloading}>
+            <Download className="mr-2 h-4 w-4" /> Download PDF
+          </Button>
+          <Button variant="outline" className="flex-1 min-w-[100px]" onClick={() => navigate('/quiz')}>
+            Back to Quizzes
+          </Button>
+          <Button className="flex-1 min-w-[100px]" onClick={() => navigate('/quiz/generate')}>
+            Try Another Quiz
+          </Button>
+        </div>
       </motion.div>
     )
   }
@@ -254,8 +303,15 @@ export function QuizPage() {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto space-y-4">
         <Card>
           <CardContent className="p-6">
-            <h2 className="text-lg font-bold mb-1">Review Before Submitting</h2>
-            <p className="text-sm text-muted-foreground mb-5">Check your answers before final submission.</p>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Review Before Submitting</h2>
+                <p className="text-sm text-muted-foreground">Check your answers before final submission.</p>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
               <div className="rounded-xl bg-muted/50 p-3 text-center">
@@ -280,7 +336,7 @@ export function QuizPage() {
               {questions.map((q, i) => (
                 <button
                   key={q.id}
-                  className="w-full flex items-center gap-2 rounded-lg border p-2.5 text-sm cursor-pointer hover:bg-muted/50 transition-colors text-left"
+                  className="w-full flex items-center gap-2 rounded-xl border p-2.5 text-sm cursor-pointer hover:bg-muted/50 transition-colors text-left"
                   onClick={() => { setCurrent(i); setShowReview(false) }}
                 >
                   <span className="w-7 text-xs font-semibold text-muted-foreground shrink-0 text-right">Q{i + 1}</span>
@@ -297,7 +353,7 @@ export function QuizPage() {
             </div>
 
             {unansweredCount > 0 && (
-              <div className="flex items-center gap-2 mt-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
+              <div className="flex items-center gap-2 mt-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
                 <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                 <p className="text-sm text-amber-700 dark:text-amber-300">
                   {unansweredCount} question{unansweredCount > 1 ? 's' : ''} unanswered — you can still go back.
@@ -323,20 +379,22 @@ export function QuizPage() {
     <div className="max-w-2xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/quiz')}>
+        <button
+          onClick={() => navigate('/quiz')}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card hover:bg-accent transition-colors shrink-0"
+        >
           <ArrowLeft className="h-4 w-4" />
-        </Button>
+        </button>
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm truncate leading-tight">{quiz.title}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Question {current + 1} of {questions.length}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">Question {current + 1} of {questions.length}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* Timer */}
           <div className={cn(
-            'flex items-center gap-1.5 text-sm font-mono tabular-nums rounded-lg px-2.5 py-1.5 border',
-            elapsed > 3600 ? 'text-red-500 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30' : 'text-muted-foreground border-border bg-muted/30'
+            'flex items-center gap-1.5 text-sm font-mono tabular-nums rounded-xl px-2.5 py-1.5 border',
+            elapsed > 3600
+              ? 'text-red-500 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30'
+              : 'text-muted-foreground border-border bg-muted/30'
           )}>
             <Clock className="h-3.5 w-3.5" />
             {formatTime(elapsed)}
@@ -345,13 +403,18 @@ export function QuizPage() {
         </div>
       </div>
 
-      {/* Progress */}
+      {/* Gradient progress bar */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-muted-foreground">{answeredCount} answered</span>
           <span className="text-xs text-muted-foreground">{questions.length - answeredCount} remaining</span>
         </div>
-        <Progress value={progress} className="h-1.5" />
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-teal-500 to-violet-500 transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
       {/* Question card */}
@@ -373,20 +436,17 @@ export function QuizPage() {
                     </span>
                     {flagged.has(question.id) && (
                       <span className="text-xs text-orange-500 flex items-center gap-1">
-                        <Flag className="h-3 w-3" fill="currentColor" />
-                        Flagged
+                        <Flag className="h-3 w-3" fill="currentColor" /> Flagged
                       </span>
                     )}
                   </div>
-                  <p className="text-base font-medium leading-relaxed text-foreground">
-                    {question.question_text}
-                  </p>
+                  <p className="text-base font-medium leading-relaxed text-foreground">{question.question_text}</p>
                 </div>
                 <button
                   onClick={toggleFlag}
                   title={flagged.has(question.id) ? 'Unflag question' : 'Flag for review'}
                   className={cn(
-                    'shrink-0 flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
+                    'shrink-0 flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
                     flagged.has(question.id)
                       ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100'
                       : 'text-muted-foreground hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20',
@@ -403,13 +463,13 @@ export function QuizPage() {
                   key={i}
                   onClick={() => selectAnswer(opt)}
                   className={cn(
-                    'w-full text-left rounded-xl border px-4 py-3 text-sm transition-all',
+                    'w-full text-left rounded-xl border-2 px-4 py-3 text-sm transition-all',
                     answers[question.id] === opt
                       ? 'border-primary bg-primary/8 font-medium text-foreground ring-1 ring-primary/30'
                       : 'border-border hover:border-primary/40 hover:bg-muted/50',
                   )}
                 >
-                  <kbd className="inline-flex items-center justify-center h-5 w-5 rounded border border-border bg-muted text-xs font-semibold text-muted-foreground mr-2 shrink-0">
+                  <kbd className="inline-flex items-center justify-center h-5 w-5 rounded-md border border-border bg-muted text-xs font-bold text-muted-foreground mr-2 shrink-0">
                     {String.fromCharCode(65 + i)}
                   </kbd>
                   {opt}
@@ -423,13 +483,13 @@ export function QuizPage() {
                       key={opt}
                       onClick={() => selectAnswer(opt)}
                       className={cn(
-                        'rounded-xl border px-4 py-3 text-sm font-medium transition-all',
+                        'rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all',
                         answers[question.id] === opt
                           ? 'border-primary bg-primary/8 text-foreground ring-1 ring-primary/30'
                           : 'border-border hover:border-primary/40 hover:bg-muted/50',
                       )}
                     >
-                      {opt}
+                      {opt === 'True' ? '✓ True' : '✗ False'}
                     </button>
                   ))}
                 </div>
@@ -459,11 +519,14 @@ export function QuizPage() {
             key={q.id}
             onClick={() => setCurrent(i)}
             className={cn(
-              'h-7 w-7 rounded-md text-xs font-medium transition-all',
-              i === current ? 'bg-primary text-primary-foreground' :
-              answers[q.id] ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-              flagged.has(q.id) ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600' :
-              'bg-muted text-muted-foreground hover:bg-accent',
+              'h-7 w-7 rounded-lg text-xs font-semibold transition-all',
+              i === current
+                ? 'bg-gradient-to-br from-teal-500 to-violet-500 text-white shadow-sm'
+                : answers[q.id]
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                  : flagged.has(q.id)
+                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600'
+                    : 'bg-muted text-muted-foreground hover:bg-accent',
             )}
             aria-label={`Question ${i + 1}`}
           >
@@ -474,11 +537,7 @@ export function QuizPage() {
 
       {/* Navigation */}
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          onClick={() => setCurrent((c) => c - 1)}
-          disabled={current === 0}
-        >
+        <Button variant="outline" onClick={() => setCurrent((c) => c - 1)} disabled={current === 0}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Previous
         </Button>
         <div className="flex-1" />
@@ -488,7 +547,7 @@ export function QuizPage() {
           </Button>
         ) : (
           <Button onClick={() => setShowReview(true)}>
-            Review & Submit
+            Review &amp; Submit
           </Button>
         )}
       </div>

@@ -12,7 +12,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
   LogOut,
   Moon,
   Sun,
@@ -23,6 +22,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn, generateInitials } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { BrandMark, BrandWordmark } from '@/components/shared/BrandLogo'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -57,9 +57,15 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           <div className="nav-logo-row">
             <div className="nav-logo-inner">
               <div className="nav-logo-icon">
-                <GraduationCap className="nav-icon" />
+                <BrandMark className="nav-icon" />
               </div>
-              {showLabels && <span className="nav-logo-text">Study Buddy</span>}
+              {showLabels && (
+                <BrandWordmark
+                  showText
+                  iconClassName="hidden"
+                  textClassName="nav-logo-text"
+                />
+              )}
             </div>
             {isMobile && (
               <button

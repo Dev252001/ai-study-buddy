@@ -13,7 +13,6 @@ import {
   addMonths,
   subMonths,
   isPast,
-  isEqual,
 } from 'date-fns'
 import { cn } from '@/lib/utils'
 
@@ -61,7 +60,8 @@ export function DatePicker({
 
   // Sync viewDate when value changes externally
   useEffect(() => {
-    if (selected) setViewDate(selected)
+    const d = value ? new Date(`${value}T12:00:00`) : null
+    if (d) setViewDate(d)
   }, [value])
 
   const calendarDays = eachDayOfInterval({

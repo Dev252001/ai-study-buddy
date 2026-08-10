@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, RotateCcw, Check, X, Trophy } from 'lucide-react'
+import { ArrowLeft, ArrowRight, RotateCcw, Check, X, Trophy, Layers } from 'lucide-react'
 import { useFlashcardSet, useFlashcardCards, useReviewCard } from '@/hooks/useFlashcards'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -41,7 +40,6 @@ export function FlashcardsPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Don't fire when typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (done) return
       switch (e.key) {
@@ -51,16 +49,10 @@ export function FlashcardsPage() {
           setFlipped((f) => !f)
           break
         case 'ArrowRight':
-          if (!flipped && current < cards.length - 1) {
-            setCurrent((c) => c + 1)
-            setFlipped(false)
-          }
+          if (!flipped && current < cards.length - 1) { setCurrent((c) => c + 1); setFlipped(false) }
           break
         case 'ArrowLeft':
-          if (!flipped && current > 0) {
-            setCurrent((c) => c - 1)
-            setFlipped(false)
-          }
+          if (!flipped && current > 0) { setCurrent((c) => c - 1); setFlipped(false) }
           break
         case 'y':
         case 'Y':
@@ -99,8 +91,7 @@ export function FlashcardsPage() {
   const card = cards[current]
   const progress = (reviewed.size / cards.length) * 100
 
-  // handleReview is now handleReviewRef (defined above with useCallback for keyboard support)
-
+  // ── Session complete screen ─────────────────────────────────────────────────
   if (done) {
     const pct = Math.round((correct / cards.length) * 100)
     const passed = pct >= 70
@@ -114,22 +105,39 @@ export function FlashcardsPage() {
       >
         <div className={cn(
           'flex h-20 w-20 items-center justify-center rounded-full mx-auto mb-4',
-          passed ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-muted'
+          passed
+            ? 'bg-gradient-to-br from-amber-400 to-orange-500'
+            : 'bg-gradient-to-br from-slate-400 to-slate-500'
         )}>
-          <Trophy className={cn('h-10 w-10', passed ? 'text-amber-500' : 'text-muted-foreground')} />
+          <Trophy className="h-10 w-10 text-white" />
         </div>
         <h2 className="text-2xl font-bold">Session Complete!</h2>
-        <p className="text-5xl font-bold mt-2 tabular-nums" style={{ color: passed ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}>
+        <p className={cn(
+          'text-5xl font-extrabold mt-2 tabular-nums',
+          passed ? 'bg-gradient-to-r from-teal-500 to-violet-500 bg-clip-text text-transparent' : 'text-muted-foreground'
+        )}>
           {pct}%
         </p>
         <p className="text-muted-foreground mt-1">{correct} of {cards.length} correct</p>
+
+        {/* Mini progress bars */}
+        <div className="flex gap-1 mt-4 max-w-xs mx-auto">
+          {cards.map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                'flex-1 h-2 rounded-full',
+                i < correct ? 'bg-gradient-to-r from-teal-500 to-emerald-400' : 'bg-rose-200 dark:bg-rose-900/50'
+              )}
+            />
+          ))}
+        </div>
+
         <div className="flex gap-2 mt-8">
           <Button
             variant="outline"
             className="flex-1"
-            onClick={() => {
-              setCurrent(0); setFlipped(false); setReviewed(new Set()); setCorrect(0); setDone(false)
-            }}
+            onClick={() => { setCurrent(0); setFlipped(false); setReviewed(new Set()); setCorrect(0); setDone(false) }}
           >
             <RotateCcw className="mr-2 h-4 w-4" /> Restart
           </Button>
@@ -141,13 +149,17 @@ export function FlashcardsPage() {
     )
   }
 
+  // ── Study screen ────────────────────────────────────────────────────────────
   return (
     <div className="max-w-lg mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/flashcards')}>
+        <button
+          onClick={() => navigate('/flashcards')}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card hover:bg-accent transition-colors shrink-0"
+        >
           <ArrowLeft className="h-4 w-4" />
-        </Button>
+        </button>
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold truncate text-sm leading-tight">{set.title}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -159,13 +171,18 @@ export function FlashcardsPage() {
         )}
       </div>
 
-      {/* Progress */}
+      {/* Gradient progress bar */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-muted-foreground">{reviewed.size} reviewed</span>
           <span className="text-xs text-muted-foreground">{cards.length - reviewed.size} remaining</span>
         </div>
-        <Progress value={progress} className="h-1.5" />
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
       {/* Flip Card */}
@@ -181,7 +198,7 @@ export function FlashcardsPage() {
               'relative min-h-64 rounded-2xl border-2 p-8 cursor-pointer select-none',
               'flex flex-col items-center justify-center text-center',
               flipped
-                ? 'bg-primary/5 border-primary/30 dark:bg-primary/10'
+                ? 'bg-gradient-to-br from-primary/5 to-violet-500/5 border-primary/40 dark:border-primary/30'
                 : 'bg-card border-border hover:border-primary/20',
               'transition-colors'
             )}
@@ -189,9 +206,12 @@ export function FlashcardsPage() {
           >
             {/* Side label */}
             <div className={cn(
-              'absolute top-3 left-3 text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full',
-              flipped ? 'text-primary bg-primary/10' : 'text-muted-foreground bg-muted'
+              'absolute top-3 left-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full',
+              flipped
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground bg-muted'
             )}>
+              <Layers className="h-3 w-3" />
               {flipped ? 'Answer' : 'Question'}
             </div>
 
@@ -200,15 +220,13 @@ export function FlashcardsPage() {
             </p>
 
             {flipped && card.hint && (
-              <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2">
+              <div className="mt-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2">
                 <p className="text-sm text-amber-700 dark:text-amber-300">💡 {card.hint}</p>
               </div>
             )}
 
             {!flipped && (
-              <p className="text-xs text-muted-foreground mt-5 flex items-center gap-1 opacity-60">
-                <span>Click to reveal answer</span>
-              </p>
+              <p className="text-xs text-muted-foreground mt-5 opacity-60">Click to reveal answer</p>
             )}
           </motion.div>
         </AnimatePresence>
@@ -218,23 +236,25 @@ export function FlashcardsPage() {
       {flipped ? (
         <div className="space-y-2">
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 h-11 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-600 dark:hover:text-red-400 hover:border-red-400"
+            <button
               onClick={() => handleReviewRef(false)}
+              className="flex-1 h-11 rounded-full border-2 border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-rose-100 dark:hover:bg-rose-950 transition-all"
             >
-              <X className="mr-2 h-4 w-4" /> Didn't Know
-            </Button>
-            <Button
-              className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white border-0"
+              <X className="h-4 w-4" /> Didn't Know
+            </button>
+            <button
               onClick={() => handleReviewRef(true)}
+              className="flex-1 h-11 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-sm"
             >
-              <Check className="mr-2 h-4 w-4" /> Got It!
-            </Button>
+              <Check className="h-4 w-4" /> Got It!
+            </button>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            Press <kbd className="font-mono bg-muted border border-border rounded px-1">Y</kbd> for Got It ·{' '}
-            <kbd className="font-mono bg-muted border border-border rounded px-1">N</kbd> for Didn't Know
+            Press{' '}
+            <kbd className="font-mono bg-muted border border-border rounded-md px-1.5 py-0.5">Y</kbd>
+            {' '}for Got It ·{' '}
+            <kbd className="font-mono bg-muted border border-border rounded-md px-1.5 py-0.5">N</kbd>
+            {' '}for Didn't Know
           </p>
         </div>
       ) : (
@@ -253,9 +273,12 @@ export function FlashcardsPage() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            <kbd className="font-mono bg-muted border border-border rounded px-1">Space</kbd> to flip ·{' '}
-            <kbd className="font-mono bg-muted border border-border rounded px-1">←</kbd>{' '}
-            <kbd className="font-mono bg-muted border border-border rounded px-1">→</kbd> to navigate
+            <kbd className="font-mono bg-muted border border-border rounded-md px-1.5 py-0.5">Space</kbd>
+            {' '}to flip ·{' '}
+            <kbd className="font-mono bg-muted border border-border rounded-md px-1.5 py-0.5">←</kbd>
+            {' '}
+            <kbd className="font-mono bg-muted border border-border rounded-md px-1.5 py-0.5">→</kbd>
+            {' '}to navigate
           </p>
         </div>
       )}

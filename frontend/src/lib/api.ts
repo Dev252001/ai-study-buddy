@@ -181,12 +181,12 @@ export const documentsApi = {
   },
 list: (skip = 0, limit = 20) => {
     const page = Math.floor(skip / limit) + 1
-    return api.get<any>('/documents/', { params: { page, page_size: limit } }).then((r) => {
+    return api.get<Record<string, unknown>>('/documents/', { params: { page, page_size: limit } }).then((r) => {
       const data = r.data
       if (Array.isArray(data)) return data as Document[]
-      if (data && Array.isArray(data.items)) return data.items as Document[]
-      if (data && Array.isArray(data.documents)) return data.documents as Document[]
-      if (data && Array.isArray(data.data)) return data.data as Document[]
+      if (data && Array.isArray((data as Record<string, unknown>).items)) return (data as Record<string, unknown>).items as Document[]
+      if (data && Array.isArray((data as Record<string, unknown>).documents)) return (data as Record<string, unknown>).documents as Document[]
+      if (data && Array.isArray((data as Record<string, unknown>).data)) return (data as Record<string, unknown>).data as Document[]
       return [] as Document[]
     })
   },
