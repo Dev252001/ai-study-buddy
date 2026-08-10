@@ -48,7 +48,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
     if (path.startsWith('/chat/')) return 'AI Chat'
     if (path.startsWith('/quiz/')) return 'Quiz'
     if (path.startsWith('/flashcards/')) return 'Flashcard Study'
-    return 'AI Study Buddy'
+    return 'Learnify'
   }
 
   return (

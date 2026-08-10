@@ -74,7 +74,7 @@ export function LoginPage() {
           </div>
           <div>
             <span className="text-lg font-bold text-white tracking-tight">
-              Study<span className="opacity-70">Buddy</span>{' '}
+              Learn<span className="opacity-70">ify</span>{' '}
               <span className="text-sm font-extrabold bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">AI</span>
             </span>
             <p className="text-xs text-white/50 -mt-0.5">Learn smarter with AI</p>
@@ -137,7 +137,7 @@ export function LoginPage() {
               </div>
               <div>
                 <h1 className="text-lg font-bold leading-tight tracking-tight">
-                  Study<span className="opacity-70">Buddy</span>{' '}
+                  Learn<span className="opacity-70">ify</span>{' '}
                   <span className="text-sm font-extrabold bg-gradient-to-r from-teal-400 to-violet-400 bg-clip-text text-transparent">AI</span>
                 </h1>
                 <p className="text-xs text-muted-foreground">Learn smarter with AI</p>

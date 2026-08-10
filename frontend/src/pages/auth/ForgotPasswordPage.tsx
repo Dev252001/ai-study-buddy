@@ -54,7 +54,7 @@ export function ForgotPasswordPage() {
         {/* Brand header */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <BrandMark className="h-10 w-10" />
-          <span className="text-xl font-extrabold tracking-tight">StudyBuddy AI</span>
+          <span className="text-xl font-extrabold tracking-tight">Learnify AI</span>
         </div>
 
         {/* Card */}
@@ -124,7 +124,7 @@ export function ForgotPasswordPage() {
 
         {/* Tagline */}
         <p className="text-center text-xs text-muted-foreground mt-5">
-          StudyBuddy AI — master your classes with AI
+          Learnify — master your classes with AI
         </p>
       </motion.div>
     </div>

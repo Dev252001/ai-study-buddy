@@ -1,8 +1,8 @@
-# AI-Powered Study Buddy
+# Learnify
 
 <div align="center">
 
-![AI Study Buddy](https://img.shields.io/badge/AI-Study%20Buddy-blue?style=for-the-badge&logo=graduation-cap)
+![Learnify](https://img.shields.io/badge/Learnify-AI-blue?style=for-the-badge&logo=graduation-cap)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi)
@@ -11,7 +11,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)
 
-**I built this to help students actually understand what they're studying — not just read it. Upload your notes, textbooks or slides and let the AI do the heavy lifting.**
+**I built this to help students actually understand what they're studying — not just read it. Upload your notes, textbooks or slides and let Learnify do the heavy lifting.**
 
 [Features](#-features) · [Tech Stack](#-tech-stack) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API Docs](#-api-documentation) · [Deployment](#-deployment)
 
@@ -23,7 +23,7 @@
 
 So basically I got tired of re-reading the same 50-page PDF three times before an exam and still feeling lost. So I built this.
 
-AI Study Buddy lets you upload your study material — PDFs, DOCX, PPTX, TXT, whatever you have — and then actually talk to it. Ask questions, get answers that come straight from your own documents (with citations so you know it's not making stuff up). It uses **RAG (Retrieval-Augmented Generation)** under the hood, which just means the AI only answers from what you gave it — no random hallucinated facts.
+Learnify lets you upload your study material — PDFs, DOCX, PPTX, TXT, whatever you have — and then actually talk to it. Ask questions, get answers that come straight from your own documents (with citations so you know it's not making stuff up). It uses **RAG (Retrieval-Augmented Generation)** under the hood, which just means the AI only answers from what you gave it — no random hallucinated facts.
 
 On top of the chat, it can auto-generate quizzes, flashcards, and summaries from your docs. There's also a study analytics dashboard so you can track how much time you're actually putting in vs. how much you think you are.
 
@@ -116,8 +116,8 @@ The frontend is **React 18 + TypeScript + Vite** with a clean dark/light UI. The
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/ai-study-buddy.git
-cd ai-study-buddy
+git clone https://github.com/Dev252001/learnify.git
+cd learnify
 ```
 
 ### 2. Configure environment
@@ -222,7 +222,7 @@ Return Answer with Sources
 ## 📁 Project Structure
 
 ```
-ai-study-buddy/
+learnify/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/routers/      # FastAPI route handlers

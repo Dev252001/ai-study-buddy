@@ -1,5 +1,5 @@
 /**
- * StudyBuddy AI — unique SVG brand mark.
+ * Learnify — unique SVG brand mark.
  * A stylised open book whose pages form a spark/lightning bolt,
  * symbolising knowledge ignited by AI.
  */

@@ -180,7 +180,7 @@ export function SettingsPage() {
                     <CardTitle className="text-base flex items-center gap-2">
                       <Palette className="h-4 w-4 text-primary" /> Appearance
                     </CardTitle>
-                    <CardDescription>Choose how StudyBuddy AI looks on your screen</CardDescription>
+                    <CardDescription>Choose how Learnify looks on your screen</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-3">

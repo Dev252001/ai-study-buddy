@@ -105,7 +105,7 @@ export function RegisterPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
             <BrandMark className="h-6 w-6 text-white" />
           </div>
-          <span className="text-lg font-bold text-white">StudyBuddy AI</span>
+          <span className="text-lg font-bold text-white">Learnify AI</span>
         </div>
 
         {/* Hero copy */}
@@ -141,7 +141,7 @@ export function RegisterPage() {
         {/* Quote */}
         <div className="relative z-10 rounded-2xl bg-white/10 border border-white/20 p-5">
           <p className="text-sm text-white/80 italic leading-relaxed">
-            "I went from barely passing to top of my class in one semester. StudyBuddy AI made everything click."
+            "I went from barely passing to top of my class in one semester. Learnify made everything click."
           </p>
           <p className="text-xs text-white/50 mt-2 font-medium">— Aisha K., Computer Science student</p>
         </div>
@@ -161,7 +161,7 @@ export function RegisterPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-violet-500">
                 <BrandMark className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold text-foreground">StudyBuddy AI</span>
+              <span className="font-bold text-foreground">Learnify AI</span>
             </div>
           </div>
 
