@@ -1,0 +1,71 @@
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+slowapi==0.1.9
+
+# ── Pydantic / settings ────────────────────────────────────────────────────────
+pydantic[email]==2.7.1
+pydantic-settings==2.2.1
+email-validator==2.1.1
+
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy[asyncio]==2.0.30
+alembic==1.13.1
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# ── Auth / security ────────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# ── HTTP client ────────────────────────────────────────────────────────────────
+httpx==0.27.0
+aiofiles==23.2.1
+
+# ── Task queue / cache ─────────────────────────────────────────────────────────
+celery==5.3.6
+redis==5.0.4
+
+# ── Vector store ──────────────────────────────────────────────────────────────
+chromadb==1.5.9
+sentence-transformers==2.7.0
+
+# ── LangChain / LLM ───────────────────────────────────────────────────────────
+langchain==0.2.1
+langchain-community==0.2.1
+langchain-openai==0.1.7
+langgraph==1.2.10
+openai==1.30.1
+
+# ── IBM Granite (WatsonX) ─────────────────────────────────────────────────────
+ibm-watsonx-ai==1.0.5
+
+# ── Document parsing ──────────────────────────────────────────────────────────
+PyMuPDF==1.24.4
+pdfplumber==0.11.0
+python-docx==1.1.2
+python-pptx==0.6.23
+pytesseract==0.3.10
+Pillow==10.3.0
+
+# ── Report / output generation ────────────────────────────────────────────────
+reportlab==4.2.0
+markdown==3.6
+python-slugify==8.0.4
+
+# ── Observability ─────────────────────────────────────────────────────────────
+structlog==24.2.0
+prometheus-client==0.20.0
+
+# ── Resilience ────────────────────────────────────────────────────────────────
+tenacity==8.3.0
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest==8.2.0
+pytest-asyncio==0.23.6
+pytest-cov==5.0.0
+fakeredis==2.23.1
+factory-boy==3.3.0
+freezegun==1.5.1

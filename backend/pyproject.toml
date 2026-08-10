@@ -1,0 +1,94 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "study-buddy-backend"
+version = "0.1.0"
+description = "AI-Powered Study Buddy – FastAPI backend"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Study Buddy Team" }]
+
+dependencies = [
+    "fastapi==0.111.0",
+    "uvicorn[standard]==0.29.0",
+    "python-multipart==0.0.9",
+    "slowapi==0.1.9",
+    "pydantic[email]==2.7.1",
+    "pydantic-settings==2.2.1",
+    "email-validator==2.1.1",
+    "sqlalchemy[asyncio]==2.0.30",
+    "alembic==1.13.1",
+    "asyncpg==0.29.0",
+    "psycopg2-binary==2.9.9",
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "httpx==0.27.0",
+    "aiofiles==23.2.1",
+    "celery==5.3.6",
+    "redis==5.0.4",
+    "chromadb==0.5.0",
+    "sentence-transformers==2.7.0",
+    "langchain==0.2.1",
+    "langchain-community==0.2.1",
+    "langchain-openai==0.1.7",
+    "langgraph==0.0.55",
+    "openai==1.30.1",
+    "ibm-watsonx-ai==1.0.5",
+    "PyMuPDF==1.24.4",
+    "pdfplumber==0.11.0",
+    "python-docx==1.1.2",
+    "python-pptx==0.6.23",
+    "pytesseract==0.3.10",
+    "Pillow==10.3.0",
+    "reportlab==4.2.0",
+    "markdown==3.6",
+    "python-slugify==8.0.4",
+    "structlog==24.2.0",
+    "prometheus-client==0.20.0",
+    "tenacity==8.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.2.0",
+    "pytest-asyncio==0.23.6",
+    "pytest-cov==5.0.0",
+    "fakeredis==2.23.1",
+    "factory-boy==3.3.0",
+    "freezegun==1.5.1",
+    "ruff==0.4.4",
+    "mypy==1.10.0",
+]
+
+[project.scripts]
+serve = "uvicorn app.main:app --reload"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+# ── Ruff (linter + formatter) ─────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = ["E", "W", "F", "I", "UP", "B", "C4", "PTH", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["app"]
+
+# ── Mypy ──────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+# ── Pytest ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-report=html"
