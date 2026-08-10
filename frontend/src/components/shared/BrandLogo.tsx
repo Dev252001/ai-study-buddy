@@ -51,7 +51,7 @@ export function BrandWordmark({
       <BrandMark className={iconClassName} />
       {showText && (
         <span className={textClassName}>
-          Study<span style={{ opacity: 0.75 }}>Buddy</span>
+          Learn<span style={{ opacity: 0.75 }}>ify</span>
           <span
             style={{
               display: 'inline-block',

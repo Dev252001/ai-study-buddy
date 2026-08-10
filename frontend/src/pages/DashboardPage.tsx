@@ -181,7 +181,7 @@ export function DashboardPage() {
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">
                 Welcome back,{' '}
-                <span className="underline decoration-white/30 underline-offset-4">{firstName}</span>!
+                <span>{firstName}</span>!
               </h2>
               <p className="text-white/70 text-sm leading-relaxed max-w-md">
                 {analytics?.streak_days
