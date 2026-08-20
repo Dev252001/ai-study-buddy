@@ -4,7 +4,7 @@ import {
   Brain, Trash2, Download, Clock,
   BarChart2, ArrowUpDown, Sparkles, Trophy,
   Target, Zap, BookOpen, FileQuestion, AlignLeft,
-  ToggleLeft, CheckSquare,
+  ToggleLeft, CheckSquare, TrendingUp,
 } from 'lucide-react'
 import { useQuizzes, useDeleteQuiz } from '@/hooks/useQuiz'
 import { exportApi, getErrorMessage } from '@/lib/api'
@@ -15,7 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useState, useMemo } from 'react'
-import { useAnalytics } from '@/hooks/useAnalytics'
+import { useAnalytics, useProgress } from '@/hooks/useAnalytics'
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
+  ResponsiveContainer, CartesianGrid, ReferenceLine,
+} from 'recharts'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const QUIZ_TYPE_META: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -45,6 +49,7 @@ function cleanTitle(title: string) {
 export function QuizListPage() {
   const { data: quizzes = [], isLoading } = useQuizzes()
   const { data: analytics } = useAnalytics()
+  const { data: progress } = useProgress()
   const { mutateAsync: deleteQuiz } = useDeleteQuiz()
   const navigate = useNavigate()
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -52,6 +57,19 @@ export function QuizListPage() {
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [filterDifficulty, setFilterDifficulty] = useState<FilterDifficulty>('all')
   const [filterType, setFilterType] = useState<FilterType>('all')
+
+  // Score trend data from progress (last 10 quiz attempts, chronological)
+  const scoreTrendData = useMemo(() => {
+    if (!progress?.quiz_scores?.length) return []
+    return [...progress.quiz_scores]
+      .sort((a, b) => new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime())
+      .slice(-10)
+      .map((s, i) => ({
+        label: `#${i + 1}`,
+        score: Math.round(s.percentage),
+        name: cleanTitle(s.title),
+      }))
+  }, [progress])
 
   const displayQuizzes = useMemo(() => {
     let result = [...quizzes]
@@ -121,6 +139,57 @@ export function QuizListPage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Score trend chart ── */}
+      {scoreTrendData.length >= 2 && (
+        <div className="rounded-2xl border border-border/60 bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+                <TrendingUp className="h-3.5 w-3.5 text-white" />
+              </div>
+              <p className="text-sm font-semibold">Score Trend</p>
+              <span className="text-xs text-muted-foreground">Last {scoreTrendData.length} quizzes</span>
+            </div>
+            <span className="text-xs font-semibold text-muted-foreground">
+              Avg: <span className="text-foreground">{Math.round(scoreTrendData.reduce((s, d) => s + d.score, 0) / scoreTrendData.length)}%</span>
+            </span>
+          </div>
+          <div style={{ height: 100 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={scoreTrendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <ReferenceLine y={70} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: 'Pass', position: 'right', fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                <ReTooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload as { name: string; score: number }
+                    return (
+                      <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-lg text-xs">
+                        <p className="font-semibold text-foreground truncate max-w-[160px]">{d.name}</p>
+                        <p className={d.score >= 70 ? 'text-emerald-500 font-bold mt-0.5' : 'text-red-400 font-bold mt-0.5'}>{d.score}%</p>
+                      </div>
+                    )
+                  }}
+                />
+                <Line
+                  type="monotone" dataKey="score" stroke="url(#scoreLineGrad)"
+                  strokeWidth={2.5} dot={{ r: 3, fill: '#8b5cf6', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#8b5cf6' }}
+                />
+                <defs>
+                  <linearGradient id="scoreLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#14b8a6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* ── Sort & filter ── */}
       {!isLoading && quizzes.length > 0 && (

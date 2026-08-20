@@ -105,7 +105,7 @@ export function RegisterPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
             <BrandMark className="h-6 w-6 text-white" />
           </div>
-          <span className="text-lg font-bold text-white">Learnify AI</span>
+          <span className="text-lg font-bold text-white">Study Buddy AI</span>
         </div>
 
         {/* Hero copy */}
@@ -141,7 +141,7 @@ export function RegisterPage() {
         {/* Quote */}
         <div className="relative z-10 rounded-2xl bg-white/10 border border-white/20 p-5">
           <p className="text-sm text-white/80 italic leading-relaxed">
-            "I went from barely passing to top of my class in one semester. Learnify made everything click."
+            "I went from barely passing to top of my class in one semester. Study Buddy AI made everything click."
           </p>
           <p className="text-xs text-white/50 mt-2 font-medium">— Aisha K., Computer Science student</p>
         </div>
@@ -161,7 +161,7 @@ export function RegisterPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-violet-500">
                 <BrandMark className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold text-foreground">Learnify AI</span>
+              <span className="font-bold text-foreground">Study Buddy AI</span>
             </div>
           </div>
 
@@ -193,23 +193,29 @@ export function RegisterPage() {
               error={errors.email?.message}
               {...register('email')}
             />
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Create a strong password"
-                autoComplete="new-password"
-                error={errors.password?.message}
-                {...register('password')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+            <div className="w-full">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Create a strong password"
+                  autoComplete="new-password"
+                  error={errors.password?.message}
+                  className="pr-10"
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {password && <PasswordStrength password={password} />}
             </div>
             <Input

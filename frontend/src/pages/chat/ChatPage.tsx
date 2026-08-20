@@ -150,7 +150,7 @@ export function ChatPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(sessionId)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(() => searchParams.get('q') ?? '')
   const [docIds, setDocIds] = useState<string[]>(() => {
     const doc = searchParams.get('doc')
     return doc ? [doc] : []

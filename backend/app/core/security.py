@@ -4,19 +4,16 @@ Security utilities: password hashing, JWT creation/decoding.
 from __future__ import annotations
 
 import re
+import bcrypt as _bcrypt
 from datetime import datetime, timedelta, timezone
 
 UTC = timezone.utc
 from typing import Any
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.core.exceptions import AuthException
-
-# ── Passlib context ───────────────────────────────────────────────────────────
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ── Password helpers ──────────────────────────────────────────────────────────
 _PASSWORD_RE = re.compile(
@@ -26,12 +23,15 @@ _PASSWORD_RE = re.compile(
 
 def hash_password(password: str) -> str:
     """Return a bcrypt hash of *password*."""
-    return _pwd_context.hash(password)
+    return _bcrypt.hashpw(password.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Return True if *plain* matches *hashed*."""
-    return _pwd_context.verify(plain, hashed)
+    try:
+        return _bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 def validate_password_complexity(password: str) -> None:

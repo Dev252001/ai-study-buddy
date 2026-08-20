@@ -1,8 +1,8 @@
-# Learnify
+# Study Buddy AI
 
 <div align="center">
 
-![Learnify](https://img.shields.io/badge/Learnify-AI-blue?style=for-the-badge&logo=graduation-cap)
+![Study Buddy AI](https://img.shields.io/badge/Study_Buddy-AI-blue?style=for-the-badge&logo=graduation-cap)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi)
@@ -11,7 +11,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)
 
-**I built this because re-reading the same notes 5 times before an exam and still blanking out is just painful. Learnify turns your study material into something you can actually interact with.**
+**I built this because re-reading the same notes 5 times before an exam and still blanking out is just painful. Study Buddy AI turns your study material into something you can actually interact with.**
 
 [Features](#-features) · [Tech Stack](#-tech-stack) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API Docs](#-api-documentation) · [Deployment](#-deployment)
 
@@ -21,11 +21,11 @@
 
 ## 🎯 Overview
 
-Okay so the problem I kept running into — I'd have a 60-page PDF, a slide deck, and some notes, and I genuinely had no idea how to study all of it efficiently before an exam. So I built Learnify to fix that for myself (and hopefully for others too).
+Okay so the problem I kept running into — I'd have a 60-page PDF, a slide deck, and some notes, and I genuinely had no idea how to study all of it efficiently before an exam. So I built Study Buddy AI to fix that for myself (and hopefully for others too).
 
 You drop in your files — PDFs, DOCX, PPTX, TXT, Markdown, whatever — and then you can just chat with them. Ask "explain this concept", "summarize chapter 3", "give me practice questions on this topic" — and it pulls the answer straight from your own documents with source citations. No hallucinations, no random Wikipedia stuff, just your material.
 
-Beyond chat, Learnify auto-generates quizzes (MCQ, True/False, Fill in the blanks), flashcard sets with spaced repetition, and multiple summary styles (bullet points, detailed, exam notes). There's a full analytics dashboard too so you can see your study hours, quiz scores over time, and daily streak.
+Beyond chat, Study Buddy AI auto-generates quizzes (MCQ, True/False, Fill in the blanks), flashcard sets with spaced repetition, and multiple summary styles (bullet points, detailed, exam notes). There's a full analytics dashboard too so you can see your study hours, quiz scores over time, and daily streak.
 
 Tech-wise: **React 18 + TypeScript + Vite** on the frontend, **FastAPI + PostgreSQL + ChromaDB + Redis** on the backend, and the AI layer supports OpenAI, IBM Granite, Llama 3 and Mistral — one env variable to switch between them.
 
@@ -116,8 +116,8 @@ Tech-wise: **React 18 + TypeScript + Vite** on the frontend, **FastAPI + Postgre
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/Dev252001/learnify.git
-cd learnify
+git clone https://github.com/Dev252001/ai-study-buddy.git
+cd ai-study-buddy
 ```
 
 ### 2. Configure environment
@@ -222,7 +222,7 @@ Return Answer with Sources
 ## 📁 Project Structure
 
 ```
-learnify/
+ai-study-buddy/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/routers/      # FastAPI route handlers

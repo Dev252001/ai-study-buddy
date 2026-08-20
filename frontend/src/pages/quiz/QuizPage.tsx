@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle, XCircle, ArrowLeft, ArrowRight, Trophy, Flag, Clock, Download, AlertCircle, Sparkles } from 'lucide-react'
+import {
+  CheckCircle, XCircle, ArrowLeft, ArrowRight, Trophy, Flag,
+  Clock, Download, AlertCircle, Sparkles, RotateCcw, MessageSquare, Timer,
+} from 'lucide-react'
 import { useQuiz, useSubmitAttempt } from '@/hooks/useQuiz'
 import { exportApi, getErrorMessage } from '@/lib/api'
 import { toast } from 'sonner'
@@ -10,12 +13,62 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import type { QuizAttemptResult } from '@/types'
+import type { QuizAttemptResult, QuizQuestion } from '@/types'
+
+// ── Timer config ───────────────────────────────────────────────────────────────
+const TIMER_SECONDS = 30   // seconds per question (0 = no per-question timer)
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+// ── Per-question countdown bar ─────────────────────────────────────────────────
+function QuestionTimer({
+  seconds,
+  total,
+  onExpire,
+}: {
+  seconds: number
+  total: number
+  onExpire: () => void
+}) {
+  const pct = Math.max(0, (seconds / total) * 100)
+  const urgent = seconds <= 5
+  const warning = seconds <= 10
+
+  useEffect(() => {
+    if (seconds === 0) onExpire()
+  }, [seconds, onExpire])
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className={cn(
+          'flex items-center gap-1 text-xs font-semibold tabular-nums',
+          urgent ? 'text-red-500' : warning ? 'text-amber-500' : 'text-muted-foreground'
+        )}>
+          <Timer className="h-3 w-3" />
+          {seconds}s
+        </span>
+        <span className="text-xs text-muted-foreground">{total}s per question</span>
+      </div>
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all',
+            urgent
+              ? 'bg-red-500'
+              : warning
+                ? 'bg-amber-400'
+                : 'bg-gradient-to-r from-teal-500 to-violet-500'
+          )}
+          style={{ width: `${pct}%`, transition: 'width 1s linear, background-color 0.3s' }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export function QuizPage() {
@@ -29,21 +82,85 @@ export function QuizPage() {
   const [result, setResult] = useState<QuizAttemptResult | null>(null)
   const [textAnswer, setTextAnswer] = useState('')
   const [elapsed, setElapsed] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [timerRunning, setTimerRunning] = useState(false)
   const [showReview, setShowReview] = useState(false)
   const [flagged, setFlagged] = useState<Set<string>>(new Set())
   const [downloading, setDownloading] = useState(false)
 
+  // Per-question countdown
+  const [questionSeconds, setQuestionSeconds] = useState(TIMER_SECONDS)
+  const questionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerEnabled = TIMER_SECONDS > 0
+
+  // Retry mode — only wrong questions
+  const [retryQuestions, setRetryQuestions] = useState<QuizQuestion[] | null>(null)
+  const activeQuestions = retryQuestions ?? quiz?.questions ?? []
+
+  // ── Elapsed (total quiz) timer ─────────────────────────────────────────────
+  useEffect(() => {
+    if (quiz && quiz.questions?.length && !timerRunning && !result) {
+      setTimerRunning(true)
+      elapsedRef.current = setInterval(() => setElapsed((e) => e + 1), 1000)
+    }
+    return () => { if (elapsedRef.current) clearInterval(elapsedRef.current) }
+  }, [quiz, result]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stopElapsedTimer = useCallback(() => {
+    if (elapsedRef.current) { clearInterval(elapsedRef.current); elapsedRef.current = null }
+    setTimerRunning(false)
+  }, [])
+
+  // ── Per-question countdown ─────────────────────────────────────────────────
+  const startQuestionTimer = useCallback(() => {
+    if (!timerEnabled) return
+    if (questionTimerRef.current) clearInterval(questionTimerRef.current)
+    setQuestionSeconds(TIMER_SECONDS)
+    questionTimerRef.current = setInterval(() => {
+      setQuestionSeconds((s) => {
+        if (s <= 1) {
+          clearInterval(questionTimerRef.current!)
+          questionTimerRef.current = null
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+  }, [timerEnabled])
+
+  const stopQuestionTimer = useCallback(() => {
+    if (questionTimerRef.current) { clearInterval(questionTimerRef.current); questionTimerRef.current = null }
+  }, [])
+
+  useEffect(() => {
+    if (!result && !showReview && activeQuestions.length) {
+      startQuestionTimer()
+    }
+    return stopQuestionTimer
+  }, [current, result, showReview]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup on unmount
+  useEffect(() => () => { stopQuestionTimer(); stopElapsedTimer() }, [stopQuestionTimer, stopElapsedTimer])
+
+  // Restore text answer when navigating
+  useEffect(() => {
+    if (!activeQuestions.length) return
+    const q = activeQuestions[current]
+    if (!q) return
+    if (q.question_type === 'fill_blank' || q.question_type === 'short_answer') {
+      setTextAnswer(answers[q.id] ?? '')
+    }
+  }, [current]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (result || showReview) return
-      const qs = quiz?.questions
-      if (!qs) return
-      const q = qs[current]
+      const q = activeQuestions[current]
+      if (!q) return
       const key = e.key.toUpperCase()
-      if (q?.question_type === 'mcq' && q.options) {
+      if (q.question_type === 'mcq' && q.options) {
         const idx = key.charCodeAt(0) - 65
         if (idx >= 0 && idx < q.options.length) {
           e.preventDefault()
@@ -53,33 +170,22 @@ export function QuizPage() {
         }
       }
       if (e.key === 'ArrowLeft' && current > 0) { e.preventDefault(); setCurrent((c) => c - 1) }
-      else if (e.key === 'ArrowRight' && current < qs.length - 1) { e.preventDefault(); setCurrent((c) => c + 1) }
+      else if (e.key === 'ArrowRight' && current < activeQuestions.length - 1) { e.preventDefault(); setCurrent((c) => c + 1) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [result, showReview, quiz, current])
+  }, [result, showReview, activeQuestions, current])
 
-  useEffect(() => {
-    if (quiz && quiz.questions?.length && !timerRunning && !result) {
-      setTimerRunning(true)
-      timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000)
+  // ── Auto-advance on timer expire ──────────────────────────────────────────
+  const handleTimerExpire = useCallback(() => {
+    // Mark as unanswered (no action needed — just advance)
+    toast.info("Time's up! Moving to next question.", { duration: 1500 })
+    if (current < activeQuestions.length - 1) {
+      setCurrent((c) => c + 1)
+    } else {
+      setShowReview(true)
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [quiz, result]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!quiz?.questions) return
-    const q = quiz.questions[current]
-    if (!q) return
-    if (q.question_type === 'fill_blank' || q.question_type === 'short_answer') {
-      setTextAnswer(answers[q.id] ?? '')
-    }
-  }, [current]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const stopTimer = () => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
-    setTimerRunning(false)
-  }
+  }, [current, activeQuestions.length])
 
   const handleDownloadPdf = async () => {
     if (!id) return
@@ -118,10 +224,10 @@ export function QuizPage() {
     )
   }
 
-  const questions = quiz.questions
+  const questions = activeQuestions
   const question = questions[current]
   const progress = ((current + 1) / questions.length) * 100
-  const answeredCount = Object.keys(answers).length
+  const answeredCount = Object.keys(answers).filter(k => questions.some(q => q.id === k)).length
   const unansweredCount = questions.length - answeredCount
   const flaggedQuestions = questions.filter((q) => flagged.has(q.id))
 
@@ -143,23 +249,42 @@ export function QuizPage() {
 
   const handleSubmit = async () => {
     if (!id) return
-    stopTimer()
+    stopElapsedTimer()
+    stopQuestionTimer()
     const finalAnswers = { ...answers }
     if (textAnswer && question) finalAnswers[question.id] = textAnswer
     const res = await submitAttempt({ quiz_id: id, answers: finalAnswers, time_taken_seconds: elapsed })
     setResult(res)
     setShowReview(false)
+    setRetryQuestions(null)
+  }
+
+  const handleRetryWrong = () => {
+    if (!result) return
+    const wrongIds = result.feedback.filter(f => !f.is_correct).map(f => f.id)
+    const wrongQs = (quiz.questions ?? []).filter(q => wrongIds.includes(q.id))
+    if (!wrongQs.length) { toast.info('No wrong answers to retry!'); return }
+    setResult(null)
+    setAnswers({})
+    setTextAnswer('')
+    setElapsed(0)
+    setCurrent(0)
+    setFlagged(new Set())
+    setRetryQuestions(wrongQs)
+    setTimerRunning(false)
+    // Restart elapsed timer
+    elapsedRef.current = setInterval(() => setElapsed((e) => e + 1), 1000)
+    setTimerRunning(true)
+    toast.info(`Retrying ${wrongQs.length} wrong answer${wrongQs.length > 1 ? 's' : ''}`)
   }
 
   // ── Results screen ─────────────────────────────────────────────────────────
   if (result) {
     const pct = result.percentage
     const passed = pct >= 70
-
-    // Score ring arc fill angle
-    const arcPct = Math.min(pct / 100, 1)
     const circumference = 2 * Math.PI * 44
-    const dashOffset = circumference * (1 - arcPct)
+    const dashOffset = circumference * (1 - Math.min(pct / 100, 1))
+    const wrongCount = result.max_score - result.correct
 
     return (
       <motion.div
@@ -170,14 +295,13 @@ export function QuizPage() {
       >
         {/* Score hero card */}
         <Card className="overflow-hidden">
-          {/* Top gradient band */}
           <div className={cn(
             'h-1.5 w-full',
             passed ? 'bg-gradient-to-r from-teal-400 via-violet-500 to-pink-500' : 'bg-gradient-to-r from-slate-400 to-slate-500'
           )} />
           <CardContent className="p-8">
             <div className="flex flex-col sm:flex-row items-center gap-8">
-              {/* SVG ring + trophy */}
+              {/* SVG ring */}
               <div className="relative shrink-0 flex items-center justify-center" style={{ width: 120, height: 120 }}>
                 <svg width="120" height="120" className="-rotate-90">
                   <circle cx="60" cy="60" r="44" fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
@@ -209,21 +333,20 @@ export function QuizPage() {
               <div className="flex-1 text-center sm:text-left">
                 <h2 className="text-2xl font-extrabold">{passed ? '🎉 Well done!' : 'Keep practicing!'}</h2>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  You got <span className="font-bold text-foreground">{result.correct}</span> out of <span className="font-bold text-foreground">{result.max_score}</span> questions correct.
+                  You got <span className="font-bold text-foreground">{result.correct}</span> of{' '}
+                  <span className="font-bold text-foreground">{result.max_score}</span> correct.
                 </p>
                 {result.time_taken_seconds != null && (
                   <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1 sm:justify-start justify-center">
                     <Clock className="h-3.5 w-3.5" /> Completed in {formatTime(result.time_taken_seconds)}
                   </p>
                 )}
-
-                {/* Mini stat pills */}
                 <div className="flex flex-wrap gap-2 mt-4 sm:justify-start justify-center">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-semibold">
                     <CheckCircle className="h-3.5 w-3.5" /> {result.correct} correct
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 text-xs font-semibold">
-                    <XCircle className="h-3.5 w-3.5" /> {result.max_score - result.correct} wrong
+                    <XCircle className="h-3.5 w-3.5" /> {wrongCount} wrong
                   </span>
                   <span className={cn(
                     'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
@@ -240,9 +363,20 @@ export function QuizPage() {
         {/* Question Review card */}
         <Card>
           <CardContent className="p-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-              Question Review
-            </p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                Question Review
+              </p>
+              {wrongCount > 0 && (
+                <button
+                  onClick={handleRetryWrong}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Retry {wrongCount} wrong answer{wrongCount > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
             <div className="space-y-2">
               {result.feedback.map((f, i) => (
                 <div
@@ -250,9 +384,7 @@ export function QuizPage() {
                   className={cn(
                     'rounded-xl border bg-card px-4 py-3 flex items-start gap-3',
                     'border-l-4',
-                    f.is_correct
-                      ? 'border-l-emerald-500 border-border'
-                      : 'border-l-red-500 border-border'
+                    f.is_correct ? 'border-l-emerald-500 border-border' : 'border-l-red-500 border-border'
                   )}
                 >
                   <div className={cn(
@@ -266,13 +398,29 @@ export function QuizPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-snug">{f.question_text}</p>
                     {!f.is_correct && (
-                      <p className="text-xs mt-1">
-                        <span className="text-muted-foreground">Correct: </span>
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">{f.correct_answer}</span>
-                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <p className="text-xs">
+                          <span className="text-muted-foreground">Your answer: </span>
+                          <span className="font-semibold text-red-500">{f.user_answer || '(unanswered)'}</span>
+                        </p>
+                        <p className="text-xs">
+                          <span className="text-muted-foreground">Correct: </span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">{f.correct_answer}</span>
+                        </p>
+                      </div>
                     )}
                     {f.explanation && (
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{f.explanation}</p>
+                    )}
+                    {/* Explain this in AI Chat */}
+                    {!f.is_correct && (
+                      <button
+                        onClick={() => navigate(`/chat?q=${encodeURIComponent(`Explain this question: "${f.question_text}". The correct answer is "${f.correct_answer}". Why is this correct?`)}`)}
+                        className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        Explain this in AI Chat
+                      </button>
                     )}
                   </div>
                 </div>
@@ -332,7 +480,7 @@ export function QuizPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-thin">
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
               {questions.map((q, i) => (
                 <button
                   key={q.id}
@@ -376,7 +524,7 @@ export function QuizPage() {
 
   // ── Active quiz screen ─────────────────────────────────────────────────────
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
@@ -387,7 +535,10 @@ export function QuizPage() {
         </button>
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm truncate leading-tight">{quiz.title}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Question {current + 1} of {questions.length}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Question {current + 1} of {questions.length}
+            {retryQuestions && <span className="ml-1.5 text-primary font-medium">(Retry mode)</span>}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <div className={cn(
@@ -403,7 +554,7 @@ export function QuizPage() {
         </div>
       </div>
 
-      {/* Gradient progress bar */}
+      {/* Progress bar */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-muted-foreground">{answeredCount} answered</span>
@@ -416,6 +567,16 @@ export function QuizPage() {
           />
         </div>
       </div>
+
+      {/* Per-question countdown */}
+      {timerEnabled && !result && (
+        <QuestionTimer
+          key={current}
+          seconds={questionSeconds}
+          total={TIMER_SECONDS}
+          onExpire={handleTimerExpire}
+        />
+      )}
 
       {/* Question card */}
       <AnimatePresence mode="wait">
@@ -451,7 +612,6 @@ export function QuizPage() {
                       ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100'
                       : 'text-muted-foreground hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20',
                   )}
-                  aria-label={flagged.has(question.id) ? 'Unflag question' : 'Flag for review'}
                 >
                   <Flag className="h-4 w-4" fill={flagged.has(question.id) ? 'currentColor' : 'none'} />
                 </button>
@@ -503,7 +663,7 @@ export function QuizPage() {
                     setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))
                   }}
                   placeholder="Type your answer here..."
-                  className="w-full rounded-xl border border-input bg-background text-foreground px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none placeholder:text-muted-foreground transition-shadow scrollbar-thin"
+                  className="w-full rounded-xl border border-input bg-background text-foreground px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none placeholder:text-muted-foreground transition-shadow"
                   rows={4}
                 />
               )}
@@ -551,6 +711,14 @@ export function QuizPage() {
           </Button>
         )}
       </div>
+
+      {/* Keyboard hint */}
+      <p className="text-xs text-muted-foreground text-center">
+        <kbd className="font-mono bg-muted border border-border rounded px-1.5 py-0.5">A</kbd>–
+        <kbd className="font-mono bg-muted border border-border rounded px-1.5 py-0.5">D</kbd> select ·{' '}
+        <kbd className="font-mono bg-muted border border-border rounded px-1.5 py-0.5">←</kbd>{' '}
+        <kbd className="font-mono bg-muted border border-border rounded px-1.5 py-0.5">→</kbd> navigate
+      </p>
     </div>
   )
 }

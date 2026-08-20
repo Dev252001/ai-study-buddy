@@ -74,7 +74,7 @@ export function LoginPage() {
           </div>
           <div>
             <span className="text-lg font-bold text-white tracking-tight">
-              Learn<span className="opacity-70">ify</span>{' '}
+              Study Buddy{' '}
               <span className="text-sm font-extrabold bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">AI</span>
             </span>
             <p className="text-xs text-white/50 -mt-0.5">Learn smarter with AI</p>
@@ -137,7 +137,7 @@ export function LoginPage() {
               </div>
               <div>
                 <h1 className="text-lg font-bold leading-tight tracking-tight">
-                  Learn<span className="opacity-70">ify</span>{' '}
+                  Study Buddy{' '}
                   <span className="text-sm font-extrabold bg-gradient-to-r from-teal-400 to-violet-400 bg-clip-text text-transparent">AI</span>
                 </h1>
                 <p className="text-xs text-muted-foreground">Learn smarter with AI</p>
@@ -161,23 +161,29 @@ export function LoginPage() {
                   {...register('email')}
                 />
 
-                <div className="relative">
-                  <Input
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    error={errors.password?.message}
-                    {...register('password')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-8 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                <div className="w-full">
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      error={errors.password?.message}
+                      className="pr-10"
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">

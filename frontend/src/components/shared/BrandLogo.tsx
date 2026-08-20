@@ -1,5 +1,5 @@
 /**
- * Learnify — unique SVG brand mark.
+ * Study Buddy AI — unique SVG brand mark.
  * A stylised open book whose pages form a spark/lightning bolt,
  * symbolising knowledge ignited by AI.
  */
@@ -51,7 +51,7 @@ export function BrandWordmark({
       <BrandMark className={iconClassName} />
       {showText && (
         <span className={textClassName}>
-          Learn<span style={{ opacity: 0.75 }}>ify</span>
+          Study Buddy
           <span
             style={{
               display: 'inline-block',

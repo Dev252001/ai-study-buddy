@@ -136,14 +136,21 @@ async def validation_exception_handler(
             return {str(k): _make_serializable(v) for k, v in obj.items()}
         if isinstance(obj, (list, tuple)):
             return [_make_serializable(i) for i in obj]
-        # Drop anything json still can't handle
         try:
             _json.dumps(obj)
             return obj
         except (TypeError, ValueError):
             return str(obj)
 
-    safe_errors = _make_serializable(exc.errors())
+    # include_url=False avoids non-serializable PydanticUrl objects;
+    # include_input=False avoids raw bytes from file upload fields.
+    try:
+        raw_errors = exc.errors(include_url=False, include_input=False)
+    except TypeError:
+        # Older pydantic versions don't support these kwargs
+        raw_errors = exc.errors()
+
+    safe_errors = _make_serializable(raw_errors)
     body = _json.dumps({"detail": safe_errors, "error_code": "VALIDATION_ERROR"})
     from starlette.responses import Response
     return Response(

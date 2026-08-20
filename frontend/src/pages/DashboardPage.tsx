@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
   FileText, MessageSquare, Brain, CreditCard,
   BarChart2, Clock, Flame, BookOpen, Plus,
   ArrowRight, Target, Edit2, Check, X,
-  Sparkles, TrendingUp, Zap,
+  Sparkles, TrendingUp, Zap, Timer, Play, Pause, RotateCcw,
+  CalendarCheck, Lightbulb,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAnalytics, useProgress, useUpdateGoals } from '@/hooks/useAnalytics'
 import { useDocuments } from '@/hooks/useDocuments'
 import { useQuizzes } from '@/hooks/useQuiz'
+import { useFlashcardSets } from '@/hooks/useFlashcards'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,6 +22,7 @@ import {
   ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts'
 import { formatDate, getStatusColor, formatFileSize, buildWeeklyChartData } from '@/lib/utils'
+import { OnboardingModal, hasOnboarded } from '@/components/shared/OnboardingModal'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -103,6 +106,127 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   )
 }
 
+// ── Pomodoro Timer ────────────────────────────────────────────────────────────
+const POMODORO_WORK = 25 * 60
+const POMODORO_BREAK = 5 * 60
+
+function PomodoroTimer() {
+  const [mode, setMode] = useState<'work' | 'break'>('work')
+  const [seconds, setSeconds] = useState(POMODORO_WORK)
+  const [running, setRunning] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const total = mode === 'work' ? POMODORO_WORK : POMODORO_BREAK
+  const pct = Math.max(0, (seconds / total) * 100)
+
+  const stop = useCallback(() => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    setRunning(false)
+  }, [])
+
+  const start = useCallback(() => {
+    intervalRef.current = setInterval(() => {
+      setSeconds(s => {
+        if (s <= 1) {
+          clearInterval(intervalRef.current!)
+          intervalRef.current = null
+          setRunning(false)
+          // switch mode — the useEffect on mode will reset seconds
+          setMode(prev => prev === 'work' ? 'break' : 'work')
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    setRunning(true)
+  }, [])
+
+  // Reset when mode changes
+  useEffect(() => {
+    stop()
+    setSeconds(mode === 'work' ? POMODORO_WORK : POMODORO_BREAK)
+  }, [mode, stop])
+
+  useEffect(() => () => stop(), [stop])
+
+  const mm = Math.floor(seconds / 60).toString().padStart(2, '0')
+  const ss = (seconds % 60).toString().padStart(2, '0')
+  const r = 26
+  const circ = 2 * Math.PI * r
+  const dash = (pct / 100) * circ
+
+  return (
+    <Card className="border-border/50">
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
+            <Timer className="h-3.5 w-3.5 text-white" />
+          </div>
+          <p className="text-sm font-bold">Pomodoro Timer</p>
+          {/* Mode toggle */}
+          <div className="ml-auto flex items-center gap-1 rounded-lg bg-muted p-0.5">
+            {(['work', 'break'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`rounded-md px-2 py-0.5 text-[11px] font-semibold transition-all ${
+                  mode === m ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {m === 'work' ? 'Focus' : 'Break'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-5">
+          {/* Ring */}
+          <div className="relative shrink-0">
+            <svg width={68} height={68} className="-rotate-90">
+              <circle cx={34} cy={34} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={5} />
+              <circle
+                cx={34} cy={34} r={r} fill="none"
+                stroke={mode === 'work' ? '#f59e0b' : '#10b981'}
+                strokeWidth={5} strokeLinecap="round"
+                strokeDasharray={`${dash} ${circ}`}
+                style={{ transition: 'stroke-dasharray 1s linear' }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-extrabold tabular-nums">{mm}:{ss}</span>
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <p className="text-xs text-muted-foreground mb-2">
+              {mode === 'work' ? 'Focus session — stay off distractions' : 'Short break — stretch or hydrate'}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={running ? stop : start}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                  running
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200'
+                    : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:opacity-90 shadow-sm'
+                }`}
+              >
+                {running ? <><Pause className="h-3 w-3" /> Pause</> : <><Play className="h-3 w-3" /> Start</>}
+              </button>
+              <button
+                onClick={() => { stop(); setSeconds(mode === 'work' ? POMODORO_WORK : POMODORO_BREAK) }}
+                className="flex items-center justify-center h-6 w-6 rounded-full border border-border hover:bg-accent transition-colors"
+                title="Reset"
+              >
+                <RotateCcw className="h-3 w-3 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function DashboardPage() {
   const { user } = useAuth()
@@ -110,11 +234,23 @@ export function DashboardPage() {
   const { data: progress, isLoading: progressLoading } = useProgress()
   const { data: documents = [], isLoading: docsLoading } = useDocuments()
   const { data: quizzes = [], isLoading: quizzesLoading } = useQuizzes()
+  const { data: flashcardSets = [] } = useFlashcardSets()
   const { mutateAsync: updateGoals, isPending: savingGoals } = useUpdateGoals()
+
+  // Due-today: cards not reviewed today (last_reviewed is null or not today)
+  const today = new Date().toDateString()
+  const dueCardCount = flashcardSets.reduce((total, set) => {
+    const cards = set.cards ?? []
+    return total + cards.filter(c => {
+      if (!c.last_reviewed) return true
+      return new Date(c.last_reviewed).toDateString() !== today
+    }).length
+  }, 0)
   const navigate = useNavigate()
 
   const [editingGoal, setEditingGoal] = useState(false)
   const [goalInput, setGoalInput] = useState('')
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasOnboarded())
 
   const weeklyData = buildWeeklyChartData(progress?.weekly_hours)
   const todayAbbr = new Date().toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)
@@ -147,10 +283,37 @@ export function DashboardPage() {
   ]
 
   return (
+    <>
+    <OnboardingModal open={showOnboarding} onClose={() => setShowOnboarding(false)} />
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-5">
 
       {/* ── Welcome Banner ── */}
       <motion.div variants={itemVariants}>
+        <style>{`
+          @keyframes wave {
+            0%,100% { transform: rotate(0deg); }
+            20%      { transform: rotate(20deg); }
+            40%      { transform: rotate(-10deg); }
+            60%      { transform: rotate(18deg); }
+            80%      { transform: rotate(-8deg); }
+          }
+          @keyframes launch {
+            0%,100% { transform: translateY(0) rotate(-45deg); }
+            50%     { transform: translateY(-5px) rotate(-45deg); }
+          }
+          @keyframes orb-drift {
+            0%,100% { transform: translate(0,0) scale(1); }
+            50%     { transform: translate(18px,-14px) scale(1.08); }
+          }
+          @keyframes orb-drift2 {
+            0%,100% { transform: translate(0,0) scale(1); }
+            50%     { transform: translate(-12px,10px) scale(1.05); }
+          }
+          @keyframes shimmer {
+            0%   { transform: translateX(-100%) skewX(-15deg); }
+            100% { transform: translateX(250%) skewX(-15deg); }
+          }
+        `}</style>
         <div
           className="relative overflow-hidden rounded-2xl px-6 py-6 sm:px-8 sm:py-7"
           style={{ background: 'linear-gradient(135deg, hsl(168 76% 22%) 0%, hsl(258 70% 40%) 55%, hsl(320 68% 42%) 100%)' }}
@@ -161,16 +324,30 @@ export function DashboardPage() {
               backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
               backgroundSize: '24px 24px',
             }} />
-          {/* Glow blobs */}
+          {/* Animated glow blobs */}
           <div className="pointer-events-none absolute -top-12 -right-12 h-56 w-56 rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, white 0%, transparent 65%)' }} />
+            style={{ background: 'radial-gradient(circle, white 0%, transparent 65%)', animation: 'orb-drift 7s ease-in-out infinite' }} />
           <div className="pointer-events-none absolute -bottom-10 left-1/4 h-40 w-40 rounded-full opacity-10"
-            style={{ background: 'radial-gradient(circle, white 0%, transparent 65%)' }} />
+            style={{ background: 'radial-gradient(circle, white 0%, transparent 65%)', animation: 'orb-drift2 9s ease-in-out infinite' }} />
+          {/* Shimmer sweep */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent"
+              style={{ animation: 'shimmer 4s ease-in-out infinite' }} />
+          </div>
 
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <p className="text-sm font-medium text-white/70">{greeting} 👋</p>
+                <p className="text-sm font-medium text-white/70 flex items-center gap-1.5">
+                  {greeting}
+                  {/* Animated waving hand */}
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" style={{ display:'inline', transformOrigin:'70% 80%', animation:'wave 2.4s ease-in-out infinite' }}>
+                    <path d="M8.5 3.5a1 1 0 0 1 1-1h.01a1 1 0 0 1 1 1v6" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                    <path d="M10.5 3.5V2a1 1 0 0 1 2 0v7" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                    <path d="M12.5 4a1 1 0 0 1 2 0v5.5" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                    <path d="M14.5 5.5a1 1 0 0 1 2 0v6.5c0 3.314-2.686 6-6 6s-6-2.686-6-6V10a1 1 0 0 1 2 0v2" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                </p>
                 {/* Streak badge */}
                 {analytics?.streak_days ? (
                   <span className="flex items-center gap-1 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
@@ -183,10 +360,21 @@ export function DashboardPage() {
                 Welcome back,{' '}
                 <span>{firstName}</span>!
               </h2>
-              <p className="text-white/70 text-sm leading-relaxed max-w-md">
+              <p className="text-white/70 text-sm leading-relaxed max-w-md flex items-center gap-1.5">
                 {analytics?.streak_days
                   ? `You're on a ${analytics.streak_days}-day streak — incredible! Keep pushing today.`
-                  : "Ready to master your classes today with AI? Let's go! 🚀"}
+                  : <>
+                      Ready to master your classes today with AI? Let's go!
+                      {/* Animated rocket */}
+                      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" style={{ display:'inline', flexShrink:0, animation:'launch 1.6s ease-in-out infinite' }}>
+                        <path d="M12 2C12 2 7 6 7 13h10c0-7-5-11-5-11z" fill="white" fillOpacity="0.9"/>
+                        <path d="M9 13v3a3 3 0 0 0 6 0v-3H9z" fill="white" fillOpacity="0.7"/>
+                        <circle cx="12" cy="10" r="1.5" fill="hsl(258 70% 55%)"/>
+                        <path d="M7 13c-1 0-2.5 1-2.5 2.5S7 16 7 16" stroke="white" strokeOpacity="0.6" strokeWidth="1.4" strokeLinecap="round"/>
+                        <path d="M17 13c1 0 2.5 1 2.5 2.5S17 16 17 16" stroke="white" strokeOpacity="0.6" strokeWidth="1.4" strokeLinecap="round"/>
+                      </svg>
+                    </>
+                }
               </p>
             </div>
 
@@ -222,6 +410,82 @@ export function DashboardPage() {
         {stats.map((s) => (
           <StatCard key={s.title} {...s} loading={analyticsLoading} />
         ))}
+      </motion.div>
+
+      {/* ── Pomodoro + Study Plan row ── */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Pomodoro */}
+        <PomodoroTimer />
+
+        {/* Today's Study Plan */}
+        <Card className="lg:col-span-2 border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+                <CalendarCheck className="h-3.5 w-3.5 text-white" />
+              </div>
+              <p className="text-sm font-bold">Today's Study Plan</p>
+              {dueCardCount > 0 && (
+                <span className="ml-auto flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold px-2 py-0.5 border border-amber-200 dark:border-amber-800">
+                  <CreditCard className="h-3 w-3" />
+                  {dueCardCount} card{dueCardCount !== 1 ? 's' : ''} due today
+                </span>
+              )}
+            </div>
+            <div className="space-y-2">
+              {/* Due flashcards task */}
+              {dueCardCount > 0 && (
+                <button
+                  onClick={() => navigate('/flashcards')}
+                  className="w-full flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2.5 text-left hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors group"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
+                    <CreditCard className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-tight">Review Flashcards</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{dueCardCount} card{dueCardCount !== 1 ? 's' : ''} due for review today</p>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </button>
+              )}
+              {/* Take a quiz task */}
+              {quizzes.length > 0 && (
+                <button
+                  onClick={() => navigate(`/quiz/${quizzes[0].id}`)}
+                  className="w-full flex items-center gap-3 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10 px-3 py-2.5 text-left hover:bg-violet-100/50 dark:hover:bg-violet-900/20 transition-colors group"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-sm">
+                    <Brain className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-tight">Retake Latest Quiz</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{quizzes[0].title}</p>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </button>
+              )}
+              {/* Upload or summarize */}
+              <button
+                onClick={() => navigate(documents.length ? '/summaries' : '/documents')}
+                className="w-full flex items-center gap-3 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10 px-3 py-2.5 text-left hover:bg-teal-100/50 dark:hover:bg-teal-900/20 transition-colors group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-400 to-cyan-500 shadow-sm">
+                  <Lightbulb className="h-4 w-4 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold leading-tight">
+                    {documents.length ? 'Generate a Summary' : 'Upload Study Material'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {documents.length ? 'Condense your notes into key points' : 'Add documents to unlock AI tools'}
+                  </p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* ── Daily Goal + Weekly Chart + Quick Actions ── */}
@@ -518,5 +782,6 @@ export function DashboardPage() {
       </motion.div>
 
     </motion.div>
+    </>
   )
 }
