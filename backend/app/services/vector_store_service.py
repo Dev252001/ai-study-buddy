@@ -45,7 +45,30 @@ class VectorStoreService:
             except Exception as exc:
                 logger.warning("chromadb_persistent_client_failed", extra={"error": str(exc)})
 
-        # Fall back to HTTP client (requires a running ChromaDB server)
+        # Fall back to HTTP client (requires a running ChromaDB server).
+        # ChromaDB 1.x requires the tenant/database to exist before any
+        # collection operations — create them via AdminClient if missing.
+        try:
+            admin = chromadb.AdminClient(
+                chromadb.config.Settings(
+                    chroma_api_impl="chromadb.api.fastapi.FastAPI",
+                    chroma_server_host=self._host,
+                    chroma_server_http_port=self._port,
+                )
+            )
+            try:
+                admin.create_tenant("default_tenant")
+                logger.info("chromadb_tenant_created")
+            except Exception:
+                pass  # already exists
+            try:
+                admin.create_database("default_database", "default_tenant")
+                logger.info("chromadb_database_created")
+            except Exception:
+                pass  # already exists
+        except Exception as exc:
+            logger.warning("chromadb_admin_setup_failed", extra={"error": str(exc)})
+
         try:
             client = chromadb.HttpClient(host=self._host, port=self._port)
             logger.info("chromadb_http_client_created")

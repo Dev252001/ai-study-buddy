@@ -40,7 +40,7 @@ WORKDIR /app
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
-RUN mkdir -p /app/uploads && chown -R appuser:appuser /app
+RUN mkdir -p /app/uploads /app/.cache/huggingface /app/.cache/sentence_transformers && chown -R appuser:appuser /app
 
 # Copy application code
 COPY --chown=appuser:appuser . .
@@ -51,6 +51,8 @@ ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV TESSERACT_CMD=/usr/bin/tesseract
+ENV HF_HOME=/app/.cache/huggingface
+ENV SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence_transformers
 
 EXPOSE 8000
 

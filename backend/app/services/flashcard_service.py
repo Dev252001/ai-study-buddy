@@ -101,7 +101,7 @@ class FlashcardService:
         raw = await rag_service._llm.generate(
             prompt=prompt,
             system_prompt=_FC_SYSTEM_PROMPT,
-            max_tokens=4096,
+            max_tokens=2048,
             temperature=0.4,
         )
 

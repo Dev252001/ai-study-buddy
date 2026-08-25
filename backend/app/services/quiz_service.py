@@ -90,12 +90,12 @@ class QuizService:
         chunks = await rag_service.retrieve(
             query=f"key concepts topics questions {' '.join(request.topics or [])}",
             document_ids=[str(request.document_id)],
-            n_results=12,
+            n_results=8,
         )
         if not chunks:
             raise AIServiceException("No content found in the specified document.")
 
-        context = "\n\n".join(c.content for c in chunks[:10])
+        context = "\n\n".join(c.content for c in chunks[:6])
         topic_hint = (
             f"- Focus on these topics: {', '.join(request.topics)}"
             if request.topics
@@ -113,7 +113,7 @@ class QuizService:
         raw = await rag_service._llm.generate(
             prompt=prompt,
             system_prompt=_QUIZ_SYSTEM_PROMPT,
-            max_tokens=4096,
+            max_tokens=2048,
             temperature=0.4,
         )
 
