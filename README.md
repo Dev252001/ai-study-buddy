@@ -5,7 +5,7 @@
 ![Study Buddy AI](https://img.shields.io/badge/Study_Buddy-AI-blue?style=for-the-badge&logo=graduation-cap)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
@@ -97,9 +97,9 @@ Tech-wise: **React 18 + TypeScript + Vite** on the frontend, **FastAPI + Postgre
 |-------|-------------|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, ShadCN UI, Framer Motion, Recharts |
 | **Backend** | Python 3.11, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic |
-| **AI/ML** | LangChain, LangGraph, Sentence Transformers, RAG |
-| **LLM** | OpenAI GPT-4o, IBM Granite (watsonx.ai), Llama 3 (Ollama), Mistral |
-| **Vector DB** | ChromaDB |
+| **AI/ML** | LangChain 0.3, LangGraph 0.2, Sentence Transformers 2.7, RAG |
+| **LLM** | Groq (compound-mini), OpenAI GPT-4o, IBM Granite (watsonx.ai), Llama 3 (Ollama), Mistral |
+| **Vector DB** | ChromaDB 1.5.9 |
 | **Database** | PostgreSQL 15 |
 | **Cache** | Redis |
 | **Document Processing** | PyMuPDF, pdfplumber, python-docx, python-pptx, Tesseract OCR |
@@ -179,7 +179,7 @@ docker-compose exec backend python scripts/seed_data.py
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │                  AI Pipeline                        │  │
 │  │  RAGService → EmbeddingService → VectorStoreService │  │
-│  │  LLMService (OpenAI / IBM / Ollama / Mistral)       │  │
+│  │  LLMService (Groq / OpenAI / IBM / Ollama / Mistral)│  │
 │  └─────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
          │                  │                   │
@@ -208,7 +208,7 @@ Retrieve Top-K Chunks (from user's documents)
 Build Context + Chat History
      │
      ▼
-LLM Generation (GPT-4o / Granite / Llama / Mistral)
+LLM Generation (Groq / GPT-4o / Granite / Llama / Mistral)
      │
      ▼
 Extract Citations + Format Response
@@ -302,6 +302,7 @@ Set `LLM_PROVIDER` in your `.env` file:
 
 | Provider | Value | Required Keys |
 |----------|-------|---------------|
+| **Groq** *(default)* | `groq` | `GROQ_API_KEY` |
 | OpenAI GPT-4o | `openai` | `OPENAI_API_KEY` |
 | IBM Granite (watsonx.ai) | `ibm_granite` | `IBM_API_KEY`, `IBM_PROJECT_ID` |
 | Llama 3 via Ollama | `llama3` | `OLLAMA_BASE_URL` |
@@ -313,8 +314,15 @@ See [`.env.example`](.env.example) for all configuration options.
 
 Key variables:
 ```env
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
+# LLM — default provider is Groq
+LLM_PROVIDER=groq
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=groq/compound-mini
+
+# Alternatively use OpenAI
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-...
+
 DATABASE_URL=postgresql+asyncpg://user:pass@postgres:5432/studybuddy
 CHROMADB_HOST=chromadb
 EMBEDDING_MODEL=all-MiniLM-L6-v2
@@ -401,6 +409,22 @@ make down        # Stop all services
 
 ---
 
+## 🐳 Docker — Multi-Stage Build
+
+The backend `Dockerfile` uses a **multi-stage build** to keep the production image lean:
+
+| Stage | Purpose |
+|-------|---------|
+| `builder` | Installs all Python dependencies into `/install` |
+| Runtime | Copies only the compiled packages; no build tools in production |
+
+The runtime image also:
+- Runs as a **non-root user** (`appuser`) for security
+- Includes Tesseract OCR for scanned PDF support
+- Caches HuggingFace and Sentence Transformer models in `/app/.cache`
+
+---
+
 ## 🧪 Testing
 
 ```bash
@@ -461,3 +485,15 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 <div align="center">
 Built with ❤️ for students everywhere
 </div>
+
+---
+
+## 📝 Changelog
+
+### Latest
+- 🔄 Switched default LLM provider to **Groq** (`compound-mini` model)
+- 🐳 Backend Dockerfile refactored to **multi-stage build** (smaller, more secure image)
+- ⬆️ Upgraded to **ChromaDB 1.5.9**, **LangChain 0.3.25**, **FastAPI 0.111.0**
+- 🔒 API keys moved out of `docker-compose.yml` — now read from `.env` via `${GROQ_API_KEY}`
+- 🛠 Improved `quiz_service.py` and `flashcard_service.py` with timezone-aware datetime handling
+- 🔍 `vector_store_service.py` updated to support both HTTP and persistent local ChromaDB client
