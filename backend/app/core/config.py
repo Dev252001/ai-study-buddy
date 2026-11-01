@@ -42,9 +42,15 @@ class Settings(BaseSettings):
         if v:
             return v
         sync_url: str = info.data.get("DATABASE_URL", "")
-        return sync_url.replace("postgresql://", "postgresql+asyncpg://", 1).replace(
+        # Normalise scheme
+        url = sync_url.replace("postgresql://", "postgresql+asyncpg://", 1).replace(
             "postgres://", "postgresql+asyncpg://", 1
         )
+        # asyncpg uses ?ssl=require, not ?sslmode=require
+        url = url.replace("sslmode=require", "ssl=require")
+        # Remove channel_binding which asyncpg does not support
+        url = url.replace("&channel_binding=require", "").replace("channel_binding=require&", "").replace("channel_binding=require", "")
+        return url
 
     # ── Redis ─────────────────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
