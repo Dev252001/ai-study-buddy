@@ -48,7 +48,7 @@ import type {
 } from '@/types'
 
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -355,7 +355,8 @@ async function downloadBlob(url: string, filename: string): Promise<void> {
 
 export const exportApi = {
   summary: (documentId: string, summaryType: string, format: 'pdf' | 'docx' | 'markdown') => {
-    const url = `/api/v1/export/summary/${documentId}?format=${format}&summary_type=${summaryType}`
+    const base = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/api\/v1$/, '')
+    const url = `${base}/api/v1/export/summary/${documentId}?format=${format}&summary_type=${summaryType}`
     window.open(url, '_blank')
   },
   quiz: (quizId: string) =>
